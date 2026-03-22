@@ -167,7 +167,7 @@ class Controller:
         R_cam = U @ Vt
 
         # 2) Seperately calculate rotation and translation matrices
-        angles = np.array([event.pitch, event.yaw, -event.roll]) * 0.02
+        angles = np.array([event.pitch, event.yaw, -event.roll]) * 0.01
         R_delta_cam = transform.Rotation.from_euler("xyz", angles, degrees=True).as_matrix()
         R_world = R_cam @ R_delta_cam @ R_cam.T
 
@@ -181,14 +181,14 @@ class Controller:
         new_affine = curr_affine @ (pivot_neg @ rot_delta @ pivot_pos)
 
         extent_scale = sum(extents) / len(extents)  # Average visible extent for zoom-proportional sensitivity
-        cam_trans = np.array([-event.x, -event.z, event.y], dtype=np.float32) * 0.0005 * extent_scale
+        cam_trans = np.array([-event.x, -event.z, event.y], dtype=np.float32) * 0.00025 * extent_scale
         new_affine[3, :3] += R_cam @ cam_trans
 
         # 4) Write back changes — fire writes concurrently
         writes = [self.remote_write("motion", True),
                   self.remote_write("view.affine", new_affine.reshape(-1).tolist())]
         if not perspective:
-            zoom_delta = event.y * 0.0002
+            zoom_delta = event.y * 0.0001
             scale = 1.0 + zoom_delta
             new_extents = [c * scale for c in extents]
             writes.append(self.remote_write("view.extents", new_extents))
