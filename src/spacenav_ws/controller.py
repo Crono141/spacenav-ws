@@ -181,7 +181,7 @@ class Controller:
         new_affine = curr_affine @ (pivot_neg @ rot_delta @ pivot_pos)
 
         extent_scale = sum(extents) / len(extents)  # Average visible extent for zoom-proportional sensitivity
-        cam_trans = np.array([-event.x, -event.z, event.y], dtype=np.float32) * 0.00025 * extent_scale
+        cam_trans = np.array([-event.x, -event.z, event.y], dtype=np.float32) * 0.000375 * extent_scale
         new_affine[3, :3] += R_cam @ cam_trans
 
         # 4) Write back changes — fire writes concurrently
