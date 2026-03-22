@@ -143,17 +143,15 @@ class Controller:
         rot_delta = np.eye(4, dtype=np.float32)
         rot_delta[:3, :3] = R_world
 
-        # 3) Apply rotation around model pivot, then add camera-relative translation
-        #    directly to the translation row (which lives in eye/camera space).
-        #    Left-multiplying a translation matrix would cancel the rotation correction
-        #    (R_cam.T @ cam_trans is undone by the @ R in the matrix product), so we
-        #    bypass that and modify the translation row directly.
+        # 3) Apply rotation around model pivot, then add camera-relative translation.
+        #    The translation row (row 3) of the affine is in world space, so we must
+        #    rotate cam_trans from camera space into world space via R_cam before adding.
         pivot_pos, pivot_neg = self.get_affine_pivot_matrices(model_extents)
         new_affine = curr_affine @ (pivot_neg @ rot_delta @ pivot_pos)
 
         extent_scale = sum(extents) / len(extents)  # Average visible extent for zoom-proportional sensitivity
         cam_trans = np.array([-event.x, -event.z, event.y], dtype=np.float32) * 0.0005 * extent_scale
-        new_affine[3, :3] += cam_trans
+        new_affine[3, :3] += R_cam @ cam_trans
 
         # Write back changes and optionally update extents if the projection is orthographic!
         if not perspective:
