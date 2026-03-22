@@ -6,6 +6,7 @@
 ## Table of Contents
 
 - [About](#about)
+- [Changes in this fork](#changes-in-this-fork)
 - [Prerequisites](#prerequisites)
 - [Usage](#usage)
 - [Development](#development)
@@ -17,6 +18,21 @@
 This lets you use [FreeSpacenav/spacenavd](https://github.com/FreeSpacenav/spacenavd) on Linux with Onshape.
 
 > **Note:** This is a development fork. For the upstream project (which may be available on PyPI), see [rmstorm/spacenav-ws](https://github.com/rmstorm/spacenav-ws).
+
+## Changes in this fork
+
+- **Camera-relative panning**: Panning now follows screen axes regardless of view
+  orientation. Previously it moved along fixed world axes. The translation row of
+  the affine is in world space, so cam_trans is rotated via R_cam (camera-to-world)
+  before applying.
+- **Zoom-proportional sensitivity**: Translation scales with view extents so panning
+  feels consistent at any zoom level.
+- **Input lag reduction**: Cached slow-changing state (model.extents, view.perspective,
+  view.extents) with periodic refresh instead of per-event reads. Writes fired
+  concurrently via asyncio.gather. Stale spacenav events drained so only the latest
+  is processed.
+- **Tuned sensitivity**: Rotation, translation, and zoom constants tuned for
+  spacenavd sensitivity=1.
 
 ## Prerequisites
 
