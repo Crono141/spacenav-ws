@@ -111,15 +111,9 @@ class Controller:
             if not (self.focus and self.subscribed):
                 continue
             # Drain any queued events so we only process the most recent one
-            while True:
-                try:
-                    mouse_event = self.reader._buffer[:32]  # peek
-                    if len(mouse_event) < 32:
-                        break
-                    # Consume the 32 bytes we peeked at
-                    self.reader._buffer = self.reader._buffer[32:]
-                except Exception:
-                    break
+            while len(self.reader._buffer) >= 32:
+                mouse_event = bytes(self.reader._buffer[:32])
+                del self.reader._buffer[:32]
 
             nums = struct.unpack("iiiiiiii", mouse_event)
             event = from_message(list(nums))
