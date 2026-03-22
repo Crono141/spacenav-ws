@@ -123,8 +123,9 @@ class Controller:
             await self.remote_write("view.extents", [c * 1.2 for c in model_extents])
             return
 
-        # 1) pull down the current extents and model matrix
+        # 1) pull down the current view state
         perspective = await self.remote_read("view.perspective")
+        extents = await self.remote_read("view.extents")
         curr_affine = np.asarray(await self.remote_read("view.affine"), dtype=np.float32).reshape(4, 4)
 
         # This (transpose of top left quadrant) is the correct way to get the rotation matrix of the camera but it is unstable.. Either of the below methods works fine though.
@@ -142,7 +143,9 @@ class Controller:
         rot_delta = np.eye(4, dtype=np.float32)
         rot_delta[:3, :3] = R_world
         trans_delta = np.eye(4, dtype=np.float32)
-        trans_delta[3, :3] = np.array([-event.x, -event.z, event.y], dtype=np.float32) * 0.0005
+        extent_scale = sum(extents) / len(extents)  # Average visible extent for zoom-proportional sensitivity
+        cam_trans = np.array([-event.x, -event.z, event.y], dtype=np.float32) * 0.0005 * extent_scale
+        trans_delta[3, :3] = R_cam.T @ cam_trans  # Transform from camera space to world space
 
         # 3) Apply changes to the ModelViewProjection matrix
         pivot_pos, pivot_neg = self.get_affine_pivot_matrices(model_extents)
@@ -150,7 +153,6 @@ class Controller:
 
         # Write back changes and optionally update extents if the projection is orthographic!
         if not perspective:
-            extents = await self.remote_read("view.extents")
             zoom_delta = event.y * 0.0002
             scale = 1.0 + zoom_delta
             new_extents = [c * scale for c in extents]
